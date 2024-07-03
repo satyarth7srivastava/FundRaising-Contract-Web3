@@ -1,0 +1,55 @@
+html{
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    align-items: center;
+    background-repeat: no-repeat;
+    background-image: url('./assets/1x/background_login.png');
+    background-size: cover;
+    background-position: center;   
+}
+.blurBox{
+    min-width: 300px;
+    min-height: 300px;
+    background-image: url('./assets/1x/blur_img.png');
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.connectLabel{
+    font-size: 20px;
+    color: rgb(31, 31, 31);
+    margin: 20px;
+}
+.inputBox{
+    border-radius: 60px;
+    border: solid rgb(49, 21, 72) 4px;
+    font-size: 18px;
+    height: 45px;
+    align-content:center;
+    padding: 10px;
+    margin: 15px;
+}
+.GoBtn{
+    background-color: rgb(49, 21, 72);
+    color: white;
+    border-radius: 60px;
+    font-size: 20px;
+    padding: 10px;
+    margin: 15px;
+    cursor: pointer;
+}
+.myLists{
+    font-size: 20px;
+    margin: 20px;
+    margin-left: -1px;
+    padding-left: -5px;
+}
+.enterInfo{
+    display: flex;
+    flex-direction: column;
+    font-size: 20px;
+    margin: 20px;
+}
