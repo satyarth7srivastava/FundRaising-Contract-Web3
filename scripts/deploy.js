@@ -26,12 +26,13 @@ async function main() {
     const MyContract = await ethers.getContractFactory('DonationForGood');
     const myContract = await MyContract.deploy();
     await myContract.waitForDeployment();
-    await myContract.connect(acc2).createDonorAcc('Donor1');
-    await myContract.connect(acc3).createRecieverAcc('Charity1',100,'Help!');
-    await myContract.connect(acc4).createRecieverAcc('Charity2',100,'Help!');
-    await myContract.connect(acc5).createRecieverAcc('Charity3',100,'Help!');
-    await myContract.connect(deployer).activateRecieverAcc(acc3.address);
-    await myContract.connect(acc2).donateTo(acc3.address,{value: ethers.parseEther('10')});
+    //used for testing
+    // await myContract.connect(acc2).createDonorAcc('Donor1');
+    // await myContract.connect(acc3).createRecieverAcc('Charity1',100,'Help!');
+    // await myContract.connect(acc4).createRecieverAcc('Charity2',100,'Help!');
+    // await myContract.connect(acc5).createRecieverAcc('Charity3',100,'Help!');
+    // await myContract.connect(deployer).activateRecieverAcc(acc3.address);
+    // await myContract.connect(acc2).donateTo(acc3.address,{value: ethers.parseEther('10')});
 
     const contractAddress = await myContract.getAddress();
 
