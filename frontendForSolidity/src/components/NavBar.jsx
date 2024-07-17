@@ -1,10 +1,10 @@
 function NavBar(){
     return (
-        <nav className="navbar navbar-dark bg-dark">
+        <h1 className="navbar navbar-dark bg-dark">
             <div className="container-fluid">
                 <span className="navbar-brand mb-0 h1">Welcome</span>  
             </div>
-        </nav>
+        </h1>
     )
 }
 export default NavBar;

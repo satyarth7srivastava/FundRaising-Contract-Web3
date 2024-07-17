@@ -4,8 +4,6 @@ import { ethers } from "ethers";
 import React from 'react';
 import Loading from './components/loading';
 import DonorDash from './components/donorDashboard';
-import ListForDonations from './components/listForDonations';
-import DonationPage from './components/donationPage';
 import CreateDonor from './components/createDonor';
 import CreateCharity from './components/createCharity';
 
@@ -35,6 +33,10 @@ export class App extends React.Component {
       donateToAddress: undefined,
       donationAmount: undefined,
       charityData: [],
+      txProcess: "NotInitiated",
+      txData: [],
+      history: [],
+      showHistory: false,
 
     }
     this.state = this.initialState
@@ -51,8 +53,24 @@ export class App extends React.Component {
         </div>
       );
     }
+    if (this.state.type === "Donor" && this.state.showHistory) {
+      const obj = this.state.history.map((data) => {
+        return (
+          <li>
+            <h3>{data}</h3>
+          </li>
+        )
+      });
+      return (
+        <div>
+          <ol>
+            {obj}
+          </ol>
+        </div>
+      )
+    }
 
-    if (this.state.type === "Donor" && !this.state.showCharityLisst && !this.state.showDonationPage) {
+    if (this.state.type === "Donor" && !this.state.showCharityLisst && !this.state.showDonationPage && !this.state.showHistory) {
       if (!this.state.dataGot) {
         this._getDonorData().then((Data) => {
           this.setState({ name: Data[1], token: ethers.utils.formatEther(Data[2]), totalDonations: ethers.utils.formatEther(Data[2]), activationStatus: Data[4] });
@@ -83,13 +101,17 @@ export class App extends React.Component {
               <h2>{data[1]}</h2>
               <h3>{data[2]}</h3>
               <h3>{ethers.utils.formatEther(data[4])} donated of {ethers.utils.formatEther(data[3])}</h3>
+              <h4>Total Upvaotes: {data[7]}</h4>
+              <button className="GoBtn" onClick={() => this._upVote(data[0])}>Upvote</button>
               <button className="GoBtn" onClick={() => this.setState({ showDonationPage: true, donateToAddress: data[0] })}>Donate</button>
+              <button className="GoBtn" onClick={() => this.setState({ showCharityLisst: false })}>Back</button>
+              <button className="GoBtn" onClick={() => { this.setState({ showHistory: true }); this._getHistory(data[0]) }}>History</button>
             </li>
           );
         } else {
           return (
             <div>
-
+              Not active yet
             </div>
           )
         }
@@ -116,7 +138,10 @@ export class App extends React.Component {
           <h1>{this.state.charityData[1]}</h1>
           <h2>{this.state.charityData[2]}</h2>
           <h3>{this.state.amount} donated of {this.state.goal}</h3>
-          <button className="GoBtn" onClick={() => this._checkOut()}>Check Out</button>
+          <button className="GoBtn" onClick={() => this.setState({ showCharityLisst: true })}>Back</button>
+          <input type='text' id='amount' placeholder='Enter The amount you need for checkout'></input>
+          <input type='text' id='reason' placeholder='Enter the reason'></input>
+          <button className="GoBtn" onClick={() => this._checkOut(document.getElementById('amount').value, document.getElementById('reason').value)}>Check Out</button>
         </div>
       )
     } else if (this.state.showDonationPage && this.state.type === "Donor") {
@@ -125,7 +150,7 @@ export class App extends React.Component {
           <h1>Donation Page</h1>
           <label className="connectLabel">Enter the amount you want to donate in eth</label>
           <input className="inputBox" type="text" id="donationAmount"></input>
-          <button className="GoBtn" onClick={() => { this._donateTo(document.getElementById("donationAmount").value, this.state.donateToAddress); this.setState({ showDonationPage: false, showCharityLisst: false }); this._resetState(); this._stopPollingData() }}>Donate</button>
+          <button className="GoBtn" onClick={() => { this._donateTo(document.getElementById("donationAmount").value, this.state.donateToAddress).then(this.setState({ txProcess: "Completed" })); this.setState({ showDonationPage: false, showCharityLisst: false, txProcess: "Initiated", type: "process" }); }}>Donate</button>
         </div>
       )
     } else if (this.state.type === "Create_Donor") {
@@ -143,7 +168,7 @@ export class App extends React.Component {
         <div className="blurBox">
           <NavBar />
           <h1>Create Charity</h1>
-          <CreateCharity createChar={(name, amount, cause, autoCheckout) => this._createCharity(name, amount, cause, autoCheckout)} />
+          <CreateCharity createChar={(name, amount, cause) => this._createCharity(name, amount, cause)} />
         </div>
       )
     } else if (this.state.type === "Owner" && !this.state.showCharityLisst) {
@@ -190,6 +215,15 @@ export class App extends React.Component {
           <ol className='myLists'>
             {obj}
           </ol>
+        </div>
+      )
+    } else if (this.state.txProcess === "Initiated" && this.state.type === "process") {
+      return <Loading />
+    } else if (this.state.txProcess === "Completed" && this.state.type === "process") {
+      return (
+        <div className="blurBox">
+          <h1>Transaction Completed</h1>
+          <h2>Please Check your wallet for Tx-Hash</h2>
         </div>
       )
     }
@@ -303,16 +337,22 @@ export class App extends React.Component {
   async _donateTo(amount, address) {
     const _ETH = ethers.utils.parseEther(amount);
     await this._myContract.donateTo(address, { value: _ETH });
+    // this._myContract.on("amountDonated", (amount, from, to) => {
+    //   this.setState({ txData: [ethers.utils.formatEther(amount), from, to] });
+    // });
+    this.setState({ txProcess: "Completed" });
   }
   async _createDonor(name) {
     await this._myContract.createDonorAcc(name);
     this._resetState();
   }
-  async _checkOut() {
-    this._myContract.checkOut();
+  async _checkOut(amount, reason) {
+    const amountNumeric = ethers.utils.parseEther((amount));
+    const history = `Amount: ${amountNumeric} Reason: ${reason}`;
+    this._myContract.checkOut(history, amountNumeric);
   }
-  async _createCharity(name, amount, cause, autoCheckout) {
-    await this._myContract.createRecieverAcc(name, amount, cause, autoCheckout);
+  async _createCharity(name, amount, cause) {
+    await this._myContract.createRecieverAcc(name, amount, cause);
     this._resetState();
   }
   async _getOwner() {
@@ -334,6 +374,13 @@ export class App extends React.Component {
   }
   async _deActivateDonor(address) {
     await this._myContract.deactivateDonorAcc(address);
+  }
+  async _getHistory(address) {
+    const history = await this._myContract.getHistory(address);
+    this.setState({ history: history });
+  }
+  async _upVote(address) {
+    await this._myContract.upVote(address);
   }
 }
 

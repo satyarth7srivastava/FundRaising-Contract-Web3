@@ -16,16 +16,24 @@ contract DonationForGood {
 
     //test functions ends
 
+    //setting the owner of the contract
     constructor() {
         owner = msg.sender;
     }
 
+    //setting the events
     event tokenRecieved(uint256 tokenAlloted, string name);
+    event amountDonated(uint256 amount, address from, address to);
+    event checkOutDone(uint256 amount, address to);
 
+
+    //modifier for owner
     modifier ownerOnly() {
         require(msg.sender == owner);
         _;
     }
+
+    //making a struct for donor
 
     struct D_Account {
         address payable wallet;
@@ -35,9 +43,12 @@ contract DonationForGood {
         bool activeStatus;
     }
 
+    //mapping the address to the struct
+
     mapping(address => D_Account) d_acc;
     address[] public donor_acc_list;
 
+    //function available to donor to create an account
     function createDonorAcc(string memory name) public {
         D_Account memory acc;
         acc.name = name;
@@ -49,6 +60,7 @@ contract DonationForGood {
         d_acc[(msg.sender)] = acc;
     }
 
+    //function to get the details of the donor
     function getDetailsDonor(
         address checkfor
     ) public view returns (address, string memory, uint256, uint256, bool) {
@@ -61,6 +73,8 @@ contract DonationForGood {
         );
     }
 
+    //function for charity to create an account
+
     struct R_Account {
         address payable wallet;
         string name;
@@ -68,17 +82,17 @@ contract DonationForGood {
         uint256 currentAmount;
         string cause;
         bool activeStatus;
-        bool autoCheckout;
+        string[] history;
+        uint256 upVotes;
     }
-
+    
     mapping(address => R_Account) r_acc;
-    address[] public reciever_acc_list;
+    address[] public reciever_acc_list; 
 
-    function createRecieverAcc(
+    function createRecieverAcc( 
         string memory name,
         uint256 amount,
-        string memory cause,
-        bool autoCheckout
+        string memory cause 
     ) public {
         R_Account memory acc;
         acc.name = name;
@@ -86,11 +100,11 @@ contract DonationForGood {
         acc.moneyRequestedEther = amount * ONE_ETHER;
         acc.cause = cause;
         acc.currentAmount = 0;
+        acc.upVotes = 0;
         acc.wallet = payable(msg.sender);
-        acc.autoCheckout = autoCheckout;
         reciever_acc_list.push(payable(msg.sender));
         r_acc[(msg.sender)] = acc;
-    }
+    } 
 
     function getDetailsReciever(
         address checkfor
@@ -104,29 +118,34 @@ contract DonationForGood {
             uint256,
             uint256,
             bool,
-            bool
+            uint256
         )
     {
         return (
             r_acc[checkfor].wallet,
             r_acc[checkfor].name,
             r_acc[checkfor].cause,
-            r_acc[checkfor].moneyRequestedEther,
+            r_acc[checkfor].moneyRequestedEther, 
             r_acc[checkfor].currentAmount,
             r_acc[checkfor].activeStatus,
-            r_acc[checkfor].autoCheckout
+            r_acc[checkfor].upVotes 
         );
     }
 
+
+    //function for owner to activate or deactivate the account
     function activateRecieverAcc(address add) public ownerOnly {
         r_acc[add].activeStatus = true;
     }
+
     function deactivateRecieverAcc(address add) public ownerOnly {
         r_acc[add].activeStatus = false;
     }
+
     function activateDonorAcc(address add) public ownerOnly {
         d_acc[add].activeStatus = true;
     }
+
     function deactivateDonorAcc(address add) public ownerOnly {
         d_acc[add].activeStatus = false;
     }
@@ -148,7 +167,7 @@ contract DonationForGood {
             msg.value > 0 &&
                 msg.value <=
                 (r_acc[To].moneyRequestedEther - r_acc[To].currentAmount),
-            "The amount you are donating is not valid"
+            "The amount you are donating is not valid"   
         );
         r_acc[To].currentAmount += msg.value;
         d_acc[msg.sender].totalDonationEther += msg.value;
@@ -157,28 +176,38 @@ contract DonationForGood {
             emit tokenRecieved(10, d_acc[msg.sender].name);
         }
         if (
-            (r_acc[To].moneyRequestedEther == r_acc[To].currentAmount) &&
-            (r_acc[To].autoCheckout)
+            (r_acc[To].moneyRequestedEther == r_acc[To].currentAmount)
         ) {
-            payable(To).transfer(r_acc[To].currentAmount);
             r_acc[To].activeStatus = false;
-            r_acc[To].cause = "Request Done";
+            r_acc[To].cause = "Request Done No longer accepting donations";
         }
+        emit amountDonated(msg.value, msg.sender, To);
     }
 
-    function checkOut() public payable {
+    //history management
+    function pushHistory(address reciever, string memory reason) public {
+        r_acc[reciever].history.push(reason);
+    }
+    function getHistory(address reciever) public view returns (string[] memory) {
+        return r_acc[reciever].history;
+    }
+
+    //checking out
+    function checkOut(string memory reason, uint amount) public payable {
         require(
             r_acc[msg.sender].activeStatus,
             "Not a valid account or you aare not the reciever owner"
         );
-        payable(msg.sender).transfer(r_acc[msg.sender].currentAmount);
-        r_acc[msg.sender].moneyRequestedEther -= r_acc[msg.sender].currentAmount;
-        r_acc[msg.sender].currentAmount = 0; //resetting the current amount 
-        r_acc[msg.sender].activeStatus = false;
-        r_acc[msg.sender].cause = "Request Done";
+        pushHistory(msg.sender, reason);
+        payable(msg.sender).transfer(amount);
+        r_acc[msg.sender].moneyRequestedEther -= amount;  
+        r_acc[msg.sender].currentAmount -= amount; //resetting the current amount
     }
-
+ 
     function getRecieverList() public view returns (address[] memory) {
         return reciever_acc_list;
+    }
+    function upVote(address reciever) public {
+        r_acc[reciever].upVotes += 1;
     }
 }

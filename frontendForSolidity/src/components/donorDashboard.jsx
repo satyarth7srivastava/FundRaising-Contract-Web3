@@ -6,7 +6,7 @@ function donorDashboard(props) {
       <h2>Your Name: {props.state.name}</h2>
       <h2>Total Reward Tokens: {props.state.token}</h2>
       <h2>Total Donations: {props.state.totalDonations}</h2>
-      <h2>Activation Status: {props.state.activationStatus && <h4>Active</h4>}</h2>
+      <h2>Activation Status: {props.state.activationStatus && <div>Active</div>}</h2>
     </div>
   );
 }
