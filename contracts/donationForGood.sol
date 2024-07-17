@@ -208,6 +208,6 @@ contract DonationForGood {
         return reciever_acc_list;
     }
     function upVote(address reciever) public {
-        r_acc[reciever].upVotes += 1;
+        r_acc[reciever].upVotes += 1*ONE_ETHER;
     }
 }

@@ -101,7 +101,7 @@ export class App extends React.Component {
               <h2>{data[1]}</h2>
               <h3>{data[2]}</h3>
               <h3>{ethers.utils.formatEther(data[4])} donated of {ethers.utils.formatEther(data[3])}</h3>
-              <h4>Total Upvaotes: {data[7]}</h4>
+              <h4>Total Upvaotes: {ethers.utils.formatEther(data[6])}</h4>
               <button className="GoBtn" onClick={() => this._upVote(data[0])}>Upvote</button>
               <button className="GoBtn" onClick={() => this.setState({ showDonationPage: true, donateToAddress: data[0] })}>Donate</button>
               <button className="GoBtn" onClick={() => this.setState({ showCharityLisst: false })}>Back</button>
